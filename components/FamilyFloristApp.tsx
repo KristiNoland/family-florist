@@ -464,7 +464,7 @@ export default function FamilyFloristApp({ supabase, user }) {
               {view === "drivers" && (
                 selectedDriver
                   ? <DriverDetail driver={drivers.find(d => d.id === selectedDriver.id) || selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} updateDriver={updateDriver} removeDriver={removeDriver} saveDriverEvent={saveDriverEvent} onBack={() => setSelectedDriver(null)} showToast={showToast} supabase={supabase} />
-                  : <DriversView drivers={drivers} event={event} activeEvent={activeEvent} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSelect={setSelectedDriver} updateDriver={updateDriver} createDriver={createDriver} showToast={showToast} />
+                  : <DriversView drivers={drivers} event={event} activeEvent={activeEvent} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSelect={setSelectedDriver} updateDriver={updateDriver} createDriver={createDriver} addDriverToEvent={addDriverToEvent} showToast={showToast} />
               )}
               {view === "schedule" && <ScheduleView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} saveDriverEvent={saveDriverEvent} />}
               {view === "hours" && <HoursView event={event} drivers={drivers} activeEvent={activeEvent} saveDriverEvent={saveDriverEvent} />}
@@ -681,7 +681,7 @@ function DashboardView({ event, drivers, activeEvent, setView }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <Card title="Daily Driver Count">
           {event.days.map((day) => {
-            const count = eventDrivers.filter((d) => d.events[activeEvent]?.scheduled?.[day.id]).length;
+            const count = eventDrivers.filter((d) => d.role !== "dispatcher" && d.events[activeEvent]?.scheduled?.[day.id]).length;
             const pct = Math.min(100, (count / event.driversNeeded) * 100);
             return (
               <div key={day.id} style={{ marginBottom: 16 }}>
@@ -712,11 +712,13 @@ function DashboardView({ event, drivers, activeEvent, setView }) {
 // ═══════════════════════════════════════════════════════════════
 // DRIVERS VIEW (with Add Driver form)
 // ═══════════════════════════════════════════════════════════════
-function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, onSelect, updateDriver, createDriver, showToast }) {
+function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, onSelect, updateDriver, createDriver, addDriverToEvent, showToast }) {
   const [showAdd, setShowAdd] = useState(false);
+  const [showExisting, setShowExisting] = useState(false);
   const [newDrv, setNewDrv] = useState({ name: "", email: "", phone: "", altPhone: "", returning: false, hasDL: false, hasInsurance: false, signedLiability: false, checkPref: "pickup", mailingAddress: "", availability: {}, partialHours: {}, scheduled: {} });
 
   const eventDrivers = drivers.filter((d) => d.events?.[activeEvent]);
+  const existingDrivers = drivers.filter((d) => !d.events?.[activeEvent]);
   const dispatcherCount = eventDrivers.filter(d => d.role === "dispatcher").length;
   const filtered = eventDrivers.filter((d) => d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -753,7 +755,8 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
         <div style={{ display: "flex", gap: 8 }}>
           <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
             style={{ padding: "8px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, width: 180, background: COLORS.white }} />
-          <Btn icon="add" onClick={() => setShowAdd(true)}>Add Driver</Btn>
+          {existingDrivers.length > 0 && <Btn icon="drivers" variant="secondary" onClick={() => { setShowExisting(!showExisting); setShowAdd(false); }}>Add Existing ({existingDrivers.length})</Btn>}
+          <Btn icon="add" onClick={() => { setShowAdd(true); setShowExisting(false); }}>New Driver</Btn>
         </div>
       </div>
 
@@ -809,6 +812,37 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
           <div style={{ display: "flex", gap: 8 }}>
             <Btn onClick={handleAddDriver}>Add Driver</Btn>
             <Btn variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Btn>
+          </div>
+        </Card>
+      )}
+
+      {showExisting && existingDrivers.length > 0 && (
+        <Card title="Add Existing Drivers to This Event" style={{ marginBottom: 20, border: `2px solid ${COLORS.gold}` }}
+          action={<Btn small variant="ghost" icon="close" onClick={() => setShowExisting(false)} />}>
+          <p style={{ fontSize: 13, color: COLORS.textMuted, marginBottom: 16 }}>
+            These drivers are already in your database from other events. Click to add them to <strong>{event?.name}</strong>.
+          </p>
+          <div style={{ display: "grid", gap: 8 }}>
+            {existingDrivers.map(d => (
+              <div key={d.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: COLORS.cream, borderRadius: 8, border: `1px solid ${COLORS.borderLight}` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "50%", background: `linear-gradient(135deg, ${COLORS.forest}, ${COLORS.forestLight})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14, fontWeight: 700 }}>{d.name.charAt(0)}</div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{d.name}</div>
+                    <div style={{ fontSize: 12, color: COLORS.textMuted }}>
+                      {d.phone}{d.email ? ` · ${d.email}` : ""}{d.rating ? ` · ${"★".repeat(d.rating)}` : ""}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <Badge color={d.hasDL ? COLORS.success : COLORS.danger}>{d.hasDL ? "DL ✓" : "DL ✗"}</Badge>
+                    <Badge color={d.hasInsurance ? COLORS.success : COLORS.danger}>{d.hasInsurance ? "Ins ✓" : "Ins ✗"}</Badge>
+                  </div>
+                  <Btn small icon="add" onClick={async () => { await addDriverToEvent(d.id, activeEvent); showToast(`${d.name} added to event!`); }}>Add to Event</Btn>
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
       )}
