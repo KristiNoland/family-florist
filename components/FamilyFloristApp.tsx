@@ -346,7 +346,19 @@ export default function FamilyFloristApp({ supabase, user }) {
     await supabase.from("drivers").delete().eq("id", driverId);
     setDrivers(prev => prev.filter(d => d.id !== driverId));
     setSelectedDriver(null);
-    showToast("Driver removed");
+    showToast("Driver permanently deleted");
+  }
+
+  async function removeDriverFromEvent(driverId, eventId) {
+    await supabase.from("driver_events").delete().eq("driver_id", driverId).eq("event_id", eventId);
+    setDrivers(prev => prev.map(d => {
+      if (d.id !== driverId) return d;
+      const updated = { ...d, events: { ...d.events } };
+      delete updated.events[eventId];
+      return updated;
+    }));
+    setSelectedDriver(null);
+    showToast("Driver removed from event");
   }
 
   async function saveDriverEvent(driverId, eventId, field, value) {
@@ -463,7 +475,7 @@ export default function FamilyFloristApp({ supabase, user }) {
               {view === "dashboard" && <DashboardView event={event} drivers={drivers} activeEvent={activeEvent} setView={setView} />}
               {view === "drivers" && (
                 selectedDriver
-                  ? <DriverDetail driver={drivers.find(d => d.id === selectedDriver.id) || selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} updateDriver={updateDriver} removeDriver={removeDriver} saveDriverEvent={saveDriverEvent} onBack={() => setSelectedDriver(null)} showToast={showToast} supabase={supabase} />
+                  ? <DriverDetail driver={drivers.find(d => d.id === selectedDriver.id) || selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} updateDriver={updateDriver} removeDriver={removeDriver} removeDriverFromEvent={removeDriverFromEvent} saveDriverEvent={saveDriverEvent} onBack={() => setSelectedDriver(null)} showToast={showToast} supabase={supabase} />
                   : <DriversView drivers={drivers} event={event} activeEvent={activeEvent} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSelect={setSelectedDriver} updateDriver={updateDriver} createDriver={createDriver} addDriverToEvent={addDriverToEvent} showToast={showToast} />
               )}
               {view === "schedule" && <ScheduleView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} saveDriverEvent={saveDriverEvent} />}
@@ -895,7 +907,7 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
 // ═══════════════════════════════════════════════════════════════
 // DRIVER DETAIL (with Edit & Delete)
 // ═══════════════════════════════════════════════════════════════
-function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, removeDriver, saveDriverEvent, onBack, showToast, supabase }) {
+function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, removeDriver, removeDriverFromEvent, saveDriverEvent, onBack, showToast, supabase }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...driver });
   const [notesText, setNotesText] = useState(driver.notes || "");
@@ -1130,12 +1142,20 @@ function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, remov
         </Card>
 
         <Card title="Danger Zone" style={{ borderColor: "#fecaca", gridColumn: "1 / -1" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>Remove from this event</div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>Driver stays in the database and can be added to future events.</div>
+            </div>
+            <Btn small variant="secondary" style={{ borderColor: COLORS.warning, color: COLORS.warning }} onClick={() => { if (confirm("Remove " + driver.name + " from " + event?.name + "?")) removeDriverFromEvent(driver.id, activeEvent); }}>Remove from Event</Btn>
+          </div>
+          <hr style={{ border: "none", borderTop: `1px solid ${COLORS.borderLight}`, margin: "12px 0" }} />
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>Remove this driver</div>
-              <div style={{ fontSize: 12, color: COLORS.textMuted }}>This will delete the driver and all their data.</div>
+              <div style={{ fontWeight: 600, fontSize: 14, color: COLORS.danger }}>Permanently delete driver</div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>This removes the driver from ALL events and deletes all their data. Cannot be undone.</div>
             </div>
-            <Btn small variant="danger" icon="delete" onClick={() => { if (confirm("Are you sure you want to remove " + driver.name + "?")) removeDriver(driver.id); }}>Remove</Btn>
+            <Btn small variant="danger" icon="delete" onClick={() => { if (confirm("PERMANENTLY DELETE " + driver.name + " and all their data? This cannot be undone.")) removeDriver(driver.id); }}>Delete Forever</Btn>
           </div>
         </Card>
       </div>
