@@ -185,9 +185,11 @@ function eventFromDb(e) {
 function driverToDb(d) {
   return {
     name: d.name, email: d.email || "", phone: d.phone || "", alt_phone: d.altPhone || "",
-    returning: d.returning || false, has_dl: d.hasDL || false, has_insurance: d.hasInsurance || false,
+    is_returning: d.returning || false, has_dl: d.hasDL || false, has_insurance: d.hasInsurance || false,
     check_pref: d.checkPref || "pickup", mailing_address: d.mailingAddress || "",
     signed_liability: d.signedLiability || false, status: d.status || "active", role: d.role || "driver",
+    notes: d.notes || "", rating: d.rating || 0,
+    dl_file_url: d.dlFileUrl || "", insurance_file_url: d.insuranceFileUrl || "", waiver_file_url: d.waiverFileUrl || "",
   };
 }
 
@@ -203,9 +205,11 @@ function driverFromDb(d, driverEventsData) {
   });
   return {
     id: d.id, name: d.name, email: d.email, phone: d.phone, altPhone: d.alt_phone || "",
-    returning: d.returning, hasDL: d.has_dl, hasInsurance: d.has_insurance,
+    returning: d.is_returning, hasDL: d.has_dl, hasInsurance: d.has_insurance,
     checkPref: d.check_pref, mailingAddress: d.mailing_address || "",
     signedLiability: d.signed_liability, status: d.status, role: d.role, events,
+    notes: d.notes || "", rating: d.rating || 0,
+    dlFileUrl: d.dl_file_url || "", insuranceFileUrl: d.insurance_file_url || "", waiverFileUrl: d.waiver_file_url || "",
   };
 }
 
@@ -320,7 +324,7 @@ export default function FamilyFloristApp({ supabase, user }) {
     if (updates.email !== undefined) dbUpdates.email = updates.email;
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
     if (updates.altPhone !== undefined) dbUpdates.alt_phone = updates.altPhone;
-    if (updates.returning !== undefined) dbUpdates.returning = updates.returning;
+    if (updates.returning !== undefined) dbUpdates.is_returning = updates.returning;
     if (updates.hasDL !== undefined) dbUpdates.has_dl = updates.hasDL;
     if (updates.hasInsurance !== undefined) dbUpdates.has_insurance = updates.hasInsurance;
     if (updates.checkPref !== undefined) dbUpdates.check_pref = updates.checkPref;
@@ -328,6 +332,11 @@ export default function FamilyFloristApp({ supabase, user }) {
     if (updates.signedLiability !== undefined) dbUpdates.signed_liability = updates.signedLiability;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
     if (updates.role !== undefined) dbUpdates.role = updates.role;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+    if (updates.rating !== undefined) dbUpdates.rating = updates.rating;
+    if (updates.dlFileUrl !== undefined) dbUpdates.dl_file_url = updates.dlFileUrl;
+    if (updates.insuranceFileUrl !== undefined) dbUpdates.insurance_file_url = updates.insuranceFileUrl;
+    if (updates.waiverFileUrl !== undefined) dbUpdates.waiver_file_url = updates.waiverFileUrl;
     if (Object.keys(dbUpdates).length > 0) {
       await supabase.from("drivers").update(dbUpdates).eq("id", driverId);
     }
@@ -454,10 +463,10 @@ export default function FamilyFloristApp({ supabase, user }) {
               {view === "dashboard" && <DashboardView event={event} drivers={drivers} activeEvent={activeEvent} setView={setView} />}
               {view === "drivers" && (
                 selectedDriver
-                  ? <DriverDetail driver={selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} updateDriver={updateDriver} removeDriver={removeDriver} saveDriverEvent={saveDriverEvent} onBack={() => setSelectedDriver(null)} showToast={showToast} />
+                  ? <DriverDetail driver={drivers.find(d => d.id === selectedDriver.id) || selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} updateDriver={updateDriver} removeDriver={removeDriver} saveDriverEvent={saveDriverEvent} onBack={() => setSelectedDriver(null)} showToast={showToast} supabase={supabase} />
                   : <DriversView drivers={drivers} event={event} activeEvent={activeEvent} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSelect={setSelectedDriver} updateDriver={updateDriver} createDriver={createDriver} showToast={showToast} />
               )}
-              {view === "schedule" && <ScheduleView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} />}
+              {view === "schedule" && <ScheduleView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} saveDriverEvent={saveDriverEvent} />}
               {view === "hours" && <HoursView event={event} drivers={drivers} activeEvent={activeEvent} saveDriverEvent={saveDriverEvent} />}
               {view === "summary" && <SummaryView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} saveDriverEvent={saveDriverEvent} />}
               {view === "templates" && <TemplatesView />}
@@ -852,10 +861,15 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
 // ═══════════════════════════════════════════════════════════════
 // DRIVER DETAIL (with Edit & Delete)
 // ═══════════════════════════════════════════════════════════════
-function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, removeDriver, saveDriverEvent, onBack, showToast }) {
+function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, removeDriver, saveDriverEvent, onBack, showToast, supabase }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ ...driver });
+  const [notesText, setNotesText] = useState(driver.notes || "");
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [uploading, setUploading] = useState("");
   const evtData = driver.events?.[activeEvent];
+
+  useEffect(() => { setNotesText(driver.notes || ""); }, [driver.notes]);
   const rate = getDriverRate(driver, event);
   const totals = calcDriverEventTotal(driver, activeEvent, event);
 
@@ -869,6 +883,50 @@ function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, remov
     });
     setEditing(false);
     showToast("Driver updated!");
+  }
+
+  async function saveNotes() {
+    await updateDriver(driver.id, { notes: notesText });
+    setEditingNotes(false);
+    showToast("Notes saved!");
+  }
+
+  async function setRating(stars) {
+    await updateDriver(driver.id, { rating: stars });
+    showToast("Rating saved!");
+  }
+
+  async function handleFileUpload(e, docType) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(docType);
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${driver.id}/${docType}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage.from("driver-docs").upload(fileName, file, { upsert: true });
+    if (uploadError) {
+      showToast("Upload failed: " + uploadError.message);
+      setUploading("");
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("driver-docs").getPublicUrl(fileName);
+    const urlField = { dl: "dlFileUrl", insurance: "insuranceFileUrl", waiver: "waiverFileUrl" }[docType];
+    const checkField = { dl: "hasDL", insurance: "hasInsurance", waiver: "signedLiability" }[docType];
+    await updateDriver(driver.id, { [urlField]: urlData.publicUrl, [checkField]: true });
+    setUploading("");
+    showToast("Document uploaded!");
+  }
+
+  function StarRating({ current, onRate }) {
+    return (
+      <div style={{ display: "flex", gap: 4 }}>
+        {[1, 2, 3, 4, 5].map(star => (
+          <button key={star} onClick={() => onRate(star)}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: star <= current ? "#f59e0b" : "#d1d5db", transition: "color 0.15s" }}>
+            ★
+          </button>
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -929,15 +987,63 @@ function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, remov
               <CheckboxField label="Liability Waiver Signed" checked={form.signedLiability} onChange={(e) => setForm(p => ({ ...p, signedLiability: e.target.checked }))} />
             </div>
           ) : (
-            <div style={{ display: "grid", gap: 14 }}>
-              {[["Driver's License", driver.hasDL], ["Insurance Card", driver.hasInsurance], ["Liability Waiver", driver.signedLiability]].map(([label, ok]) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: ok ? "#f0faf4" : COLORS.rosePale, borderRadius: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>{label}</span>
-                  <Badge color={ok ? COLORS.success : COLORS.danger}>{ok ? "On File" : "Missing"}</Badge>
+            <div style={{ display: "grid", gap: 10 }}>
+              {[
+                { label: "Driver's License", ok: driver.hasDL, url: driver.dlFileUrl, type: "dl" },
+                { label: "Insurance Card", ok: driver.hasInsurance, url: driver.insuranceFileUrl, type: "insurance" },
+                { label: "Liability Waiver", ok: driver.signedLiability, url: driver.waiverFileUrl, type: "waiver" },
+              ].map((doc) => (
+                <div key={doc.label} style={{ padding: "12px 14px", background: doc.ok ? "#f0faf4" : COLORS.rosePale, borderRadius: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: doc.url || !doc.ok ? 8 : 0 }}>
+                    <span style={{ fontSize: 13, fontWeight: 500 }}>{doc.label}</span>
+                    <Badge color={doc.ok ? COLORS.success : COLORS.danger}>{doc.ok ? "On File" : "Missing"}</Badge>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {doc.url && (
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 12, color: COLORS.forest, textDecoration: "underline", fontWeight: 500 }}>
+                        View Document
+                      </a>
+                    )}
+                    <label style={{ fontSize: 12, color: COLORS.forest, cursor: "pointer", fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 10px", border: `1px solid ${COLORS.border}`, borderRadius: 6, background: "#fff" }}>
+                      {uploading === doc.type ? "Uploading..." : doc.url ? "Replace" : "Upload"}
+                      <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={(e) => handleFileUpload(e, doc.type)} style={{ display: "none" }} />
+                    </label>
+                  </div>
                 </div>
               ))}
             </div>
           )}
+        </Card>
+
+        <Card title="Rating & Notes">
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 6, textTransform: "uppercase" }}>Driver Rating</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <StarRating current={driver.rating || 0} onRate={setRating} />
+              <span style={{ fontSize: 13, color: COLORS.textMuted }}>{driver.rating ? `${driver.rating}/5` : "Not rated"}</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, textTransform: "uppercase" }}>Notes & Comments</label>
+              {!editingNotes && <Btn small variant="ghost" icon="edit" onClick={() => { setNotesText(driver.notes || ""); setEditingNotes(true); }}>Edit</Btn>}
+            </div>
+            {editingNotes ? (
+              <div>
+                <textarea value={notesText} onChange={(e) => setNotesText(e.target.value)} placeholder="Add notes about this driver... (performance, reliability, special skills, etc.)"
+                  style={{ width: "100%", height: 100, padding: 12, border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, resize: "vertical", fontFamily: "inherit", lineHeight: 1.6 }} />
+                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <Btn small icon="check" onClick={saveNotes}>Save</Btn>
+                  <Btn small variant="ghost" onClick={() => setEditingNotes(false)}>Cancel</Btn>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: "12px 14px", background: COLORS.cream, borderRadius: 8, fontSize: 13, lineHeight: 1.6, minHeight: 60, color: driver.notes ? COLORS.text : COLORS.textMuted, fontStyle: driver.notes ? "normal" : "italic" }}>
+                {driver.notes || "No notes yet. Click Edit to add comments about this driver."}
+              </div>
+            )}
+          </div>
         </Card>
 
         <Card title={`Pay Summary — ${event?.name}`}>
@@ -952,7 +1058,44 @@ function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, remov
           </div>
         </Card>
 
-        <Card title="Danger Zone" style={{ borderColor: "#fecaca" }}>
+        <Card title={`Schedule & Availability — ${event?.name}`} style={{ gridColumn: "1 / -1" }}>
+          {event?.days?.length > 0 ? event.days.map(day => {
+            const isScheduled = evtData?.scheduled?.[day.id];
+            const avail = evtData?.availability?.[day.id] || "all_day";
+            const partial = evtData?.partialHours?.[day.id] || "";
+            return (
+              <div key={day.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, padding: "12px 16px", background: isScheduled ? "#f0faf4" : COLORS.cream, borderRadius: 8, border: isScheduled ? `1px solid ${COLORS.success}` : `1px solid ${COLORS.borderLight}` }}>
+                <button onClick={() => {
+                  const currentScheduled = evtData?.scheduled || {};
+                  saveDriverEvent(driver.id, activeEvent, "scheduled", { ...currentScheduled, [day.id]: !isScheduled });
+                }} style={{ width: 32, height: 32, borderRadius: 8, border: `2px solid ${isScheduled ? COLORS.success : COLORS.border}`, background: isScheduled ? COLORS.success : "#fff", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                  {isScheduled ? "✓" : ""}
+                </button>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{day.label}</div>
+                  <div style={{ fontSize: 11, color: COLORS.textMuted }}>{day.startTime} – {day.endTime}</div>
+                </div>
+                <select value={avail} onChange={(e) => {
+                  const currentAvail = evtData?.availability || {};
+                  saveDriverEvent(driver.id, activeEvent, "availability", { ...currentAvail, [day.id]: e.target.value });
+                }} style={{ padding: "6px 10px", border: `1px solid ${COLORS.border}`, borderRadius: 6, fontSize: 12 }}>
+                  <option value="all_day">All Day</option>
+                  <option value="partial">Partial</option>
+                  <option value="unavailable">Unavailable</option>
+                </select>
+                {avail === "partial" && (
+                  <input type="text" placeholder="e.g. 8AM-3PM" value={partial} onChange={(e) => {
+                    const currentPartial = evtData?.partialHours || {};
+                    saveDriverEvent(driver.id, activeEvent, "partialHours", { ...currentPartial, [day.id]: e.target.value });
+                  }} style={{ padding: "6px 10px", border: `1px solid ${COLORS.border}`, borderRadius: 6, fontSize: 12, width: 120 }} />
+                )}
+                <Badge color={isScheduled ? COLORS.success : COLORS.textMuted}>{isScheduled ? "Scheduled" : "Not Scheduled"}</Badge>
+              </div>
+            );
+          }) : <p style={{ fontSize: 13, color: COLORS.textMuted, fontStyle: "italic" }}>No event days set up yet. Add days in Event Settings.</p>}
+        </Card>
+
+        <Card title="Danger Zone" style={{ borderColor: "#fecaca", gridColumn: "1 / -1" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 14 }}>Remove this driver</div>
@@ -969,8 +1112,18 @@ function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, remov
 // ═══════════════════════════════════════════════════════════════
 // SCHEDULE, HOURS, SUMMARY, TEMPLATES, SIGNUP, PRINT
 // ═══════════════════════════════════════════════════════════════
-function ScheduleView({ event, drivers, activeEvent, setPrintMode }) {
+function ScheduleView({ event, drivers, activeEvent, setPrintMode, saveDriverEvent }) {
+  const [showAddDriver, setShowAddDriver] = useState(null);
   if (!event) return null;
+  const eventDrivers = drivers.filter((d) => d.events?.[activeEvent]);
+
+  function toggleScheduled(driverId, dayId) {
+    const driver = drivers.find(d => d.id === driverId);
+    const evtData = driver?.events?.[activeEvent];
+    const currentScheduled = evtData?.scheduled || {};
+    saveDriverEvent(driverId, activeEvent, "scheduled", { ...currentScheduled, [dayId]: !currentScheduled[dayId] });
+  }
+
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -979,12 +1132,13 @@ function ScheduleView({ event, drivers, activeEvent, setPrintMode }) {
       </div>
       {event.days.map((day) => {
         const dayDrivers = drivers.filter((d) => d.events?.[activeEvent]?.scheduled?.[day.id]);
+        const unscheduled = eventDrivers.filter((d) => !d.events?.[activeEvent]?.scheduled?.[day.id]);
         return (
           <Card key={day.id} title={day.label} style={{ marginBottom: 20 }} action={<span style={{ fontSize: 12, color: COLORS.textMuted }}>{dayDrivers.length} / {event.driversNeeded}</span>}>
             {dayDrivers.length === 0 ? <p style={{ color: COLORS.textMuted, fontSize: 13, fontStyle: "italic" }}>No drivers scheduled.</p> : (
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead><tr style={{ borderBottom: `2px solid ${COLORS.borderLight}` }}>
-                  {["#", "Name", "Role", "Phone", "Availability"].map((h) => (
+                  {["#", "Name", "Role", "Phone", "Availability", ""].map((h) => (
                     <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: COLORS.textMuted, fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>{h}</th>
                   ))}
                 </tr></thead>
@@ -996,12 +1150,29 @@ function ScheduleView({ event, drivers, activeEvent, setPrintMode }) {
                       <td style={{ padding: "10px 12px", fontWeight: 500 }}>{d.name}</td>
                       <td style={{ padding: "10px 12px" }}><Badge color={d.role === "dispatcher" ? COLORS.purple : COLORS.forest}>{d.role === "dispatcher" ? "Dispatch" : "Driver"}</Badge></td>
                       <td style={{ padding: "10px 12px", color: COLORS.textMuted }}>{d.phone}</td>
-                      <td style={{ padding: "10px 12px" }}>{avail === "all_day" ? <Badge color={COLORS.success}>All Day</Badge> : <Badge color={COLORS.gold}>Partial</Badge>}</td>
+                      <td style={{ padding: "10px 12px" }}>{avail === "all_day" ? <Badge color={COLORS.success}>All Day</Badge> : avail === "partial" ? <Badge color={COLORS.gold}>Partial</Badge> : <Badge color={COLORS.textMuted}>—</Badge>}</td>
+                      <td style={{ padding: "10px 12px" }}><Btn small variant="ghost" style={{ color: COLORS.danger, fontSize: 11 }} onClick={() => toggleScheduled(d.id, day.id)}>Remove</Btn></td>
                     </tr>
                   );
                 })}</tbody>
               </table>
             )}
+            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              {showAddDriver === day.id ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center", padding: "10px 14px", background: COLORS.cream, borderRadius: 8, width: "100%" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginRight: 4 }}>Add to this day:</span>
+                  {unscheduled.length === 0 ? <span style={{ fontSize: 12, color: COLORS.textMuted, fontStyle: "italic" }}>All drivers are already scheduled</span> : unscheduled.map(d => (
+                    <button key={d.id} onClick={() => { toggleScheduled(d.id, day.id); }}
+                      style={{ padding: "4px 12px", borderRadius: 20, border: `1px solid ${COLORS.border}`, background: "#fff", fontSize: 12, cursor: "pointer", fontWeight: 500 }}>
+                      + {d.name}
+                    </button>
+                  ))}
+                  <Btn small variant="ghost" icon="close" onClick={() => setShowAddDriver(null)} />
+                </div>
+              ) : (
+                <Btn small variant="secondary" icon="add" onClick={() => setShowAddDriver(day.id)}>Add Driver to {day.label}</Btn>
+              )}
+            </div>
           </Card>
         );
       })}
