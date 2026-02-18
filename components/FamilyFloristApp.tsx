@@ -1,167 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 
-// ─── SAMPLE DATA ──────────────────────────────────────────────────
-const SAMPLE_EVENTS = [
-  {
-    id: "evt-1",
-    name: "Valentine's Day 2026",
-    holiday: "Valentine's Day",
-    year: 2026,
-    status: "active",
-    ratePerHour: 15,
-    dispatcherRate: 20,
-    driversNeeded: 15,
-    checkDate: "2026-02-20",
-    infoPacketUrl: "",
-    liabilityWaiverUrl: "",
-    signupIntro: "Drivers will deliver flower arrangements on the dates listed below. Must have valid DL, insurance, and a vehicle.",
-    days: [
-      { id: "d1", date: "2026-02-13", label: "Friday, Feb 13", startTime: "7:30 AM", endTime: "5:00 PM" },
-      { id: "d2", date: "2026-02-14", label: "Saturday, Feb 14 (Valentine's Day)", startTime: "7:30 AM", endTime: "5:00 PM" },
-    ],
-  },
-  {
-    id: "evt-2",
-    name: "Mother's Day 2026",
-    holiday: "Mother's Day",
-    year: 2026,
-    status: "upcoming",
-    ratePerHour: 15,
-    dispatcherRate: 20,
-    driversNeeded: 15,
-    checkDate: "2026-05-17",
-    infoPacketUrl: "",
-    liabilityWaiverUrl: "",
-    signupIntro: "Drivers will deliver flower arrangements on the dates listed below. Must have valid DL, insurance, and a vehicle.",
-    days: [
-      { id: "d3", date: "2026-05-08", label: "Friday, May 8", startTime: "7:30 AM", endTime: "5:00 PM" },
-      { id: "d4", date: "2026-05-09", label: "Saturday, May 9", startTime: "7:30 AM", endTime: "5:00 PM" },
-      { id: "d5", date: "2026-05-10", label: "Sunday, May 10 (Mother's Day)", startTime: "7:30 AM", endTime: "5:00 PM" },
-    ],
-  },
-];
-
-const SAMPLE_DRIVERS = [
-  {
-    id: "drv-1", name: "Nimsi Aracely", email: "nimsiespino@gmail.com", phone: "(479) 203-8543",
-    altPhone: "", returning: true, hasDL: true, hasInsurance: true, checkPref: "pickup",
-    mailingAddress: "", signedLiability: true, status: "active", role: "driver",
-    events: {
-      "evt-1": {
-        signupDate: "2026-02-02",
-        availability: { "d1": "all_day", "d2": "all_day" },
-        partialHours: {},
-        thursdayAvailable: true,
-        scheduled: { "d1": true, "d2": true },
-        hours: {
-          "d1": { timeIn1: "7:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 0 },
-          "d2": { timeIn1: "7:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 25 },
-        },
-        checkNumber: "1401", paid: true,
-      },
-    },
-  },
-  {
-    id: "drv-2", name: "Amanda Clark", email: "aclark8690@gmail.com", phone: "(417) 499-9281",
-    altPhone: "(479) 409-1713", returning: true, hasDL: true, hasInsurance: true, checkPref: "mail",
-    mailingAddress: "22 Hatcher Dr, Bella Vista, AR 72715", signedLiability: true, status: "active", role: "dispatcher",
-    events: {
-      "evt-1": {
-        signupDate: "2026-01-28",
-        availability: { "d1": "partial", "d2": "partial" },
-        partialHours: { "d1": "8:30 AM - 5:00 PM", "d2": "8:30 AM - 5:00 PM" },
-        thursdayAvailable: true,
-        scheduled: { "d1": true, "d2": true },
-        hours: {
-          "d1": { timeIn1: "8:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 20 },
-          "d2": { timeIn1: "8:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 15 },
-        },
-        checkNumber: "1402", paid: false,
-      },
-    },
-  },
-  {
-    id: "drv-3", name: "Marcia Peterson", email: "Marcia_72756@yahoo.com", phone: "(479) 685-8865",
-    altPhone: "", returning: true, hasDL: false, hasInsurance: false, checkPref: "pickup",
-    mailingAddress: "", signedLiability: true, status: "active", role: "driver",
-    events: {
-      "evt-1": {
-        signupDate: "2026-01-28",
-        availability: { "d1": "all_day", "d2": "all_day" },
-        partialHours: {},
-        thursdayAvailable: true,
-        scheduled: { "d1": true, "d2": true },
-        hours: {
-          "d1": { timeIn1: "7:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 0 },
-          "d2": { timeIn1: "7:00", timeOut1: "17:30", timeIn2: "", timeOut2: "", fuel: 30 },
-        },
-        checkNumber: "", paid: false,
-      },
-    },
-  },
-  {
-    id: "drv-4", name: "Taylor Kenner", email: "taylorkenner455@yahoo.com", phone: "(901) 626-4073",
-    altPhone: "", returning: true, hasDL: true, hasInsurance: true, checkPref: "pickup",
-    mailingAddress: "", signedLiability: true, status: "active", role: "driver",
-    events: {
-      "evt-1": {
-        signupDate: "2026-01-28",
-        availability: { "d1": "partial", "d2": "partial" },
-        partialHours: { "d1": "8:30 AM - 3:30 PM", "d2": "9:30 AM - 2:30 PM" },
-        thursdayAvailable: true,
-        scheduled: { "d1": true, "d2": true },
-        hours: {
-          "d1": { timeIn1: "8:30", timeOut1: "15:30", timeIn2: "", timeOut2: "", fuel: 0 },
-          "d2": { timeIn1: "9:30", timeOut1: "14:30", timeIn2: "", timeOut2: "", fuel: 0 },
-        },
-        checkNumber: "", paid: false,
-      },
-    },
-  },
-  {
-    id: "drv-5", name: "Marla Shafer", email: "Marlalshafer@yahoo.com", phone: "(479) 231-9996",
-    altPhone: "", returning: true, hasDL: true, hasInsurance: true, checkPref: "pickup",
-    mailingAddress: "", signedLiability: true, status: "active", role: "driver",
-    events: {
-      "evt-1": {
-        signupDate: "2026-01-28",
-        availability: { "d1": "all_day", "d2": "all_day" },
-        partialHours: {},
-        thursdayAvailable: false,
-        scheduled: { "d1": true, "d2": true },
-        hours: {
-          "d1": { timeIn1: "7:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 10 },
-          "d2": { timeIn1: "7:30", timeOut1: "17:00", timeIn2: "", timeOut2: "", fuel: 10 },
-        },
-        checkNumber: "1403", paid: true,
-      },
-    },
-  },
-  {
-    id: "drv-6", name: "Kadin Leach", email: "kdleach33@gmail.com", phone: "(479) 381-0855",
-    altPhone: "", returning: false, hasDL: true, hasInsurance: true, checkPref: "mail",
-    mailingAddress: "2901 S 26th Pl, Rogers, AR 72758", signedLiability: true, status: "active", role: "driver",
-    events: {
-      "evt-1": {
-        signupDate: "2026-01-28",
-        availability: { "d1": "unavailable", "d2": "unavailable" },
-        partialHours: {},
-        thursdayAvailable: false,
-        scheduled: {},
-        hours: {},
-        checkNumber: "", paid: false,
-      },
-    },
-  },
-];
-
-const SAMPLE_TEMPLATES = [
-  { id: "tmpl-1", name: "Delivery Log Sheet", type: "PDF", description: "Driver delivery tracking sheet with signature lines", uploadDate: "2025-12-01" },
-  { id: "tmpl-2", name: "Liability Waiver", type: "PDF", description: "Independent contractor liability agreement", uploadDate: "2025-12-01" },
-  { id: "tmpl-3", name: "Driver Info Packet", type: "DOCX", description: "Welcome packet with instructions and map", uploadDate: "2026-01-15" },
-];
-
 // ─── UTILITY FUNCTIONS ──────────────────────────────────────────
 function calcHours(timeIn, timeOut) {
   if (!timeIn || !timeOut) return 0;
@@ -203,7 +42,7 @@ function formatDateLabel(dateStr) {
   return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
 }
 
-// ─── ICONS (inline SVG) ────────────────────────────────────────
+// ─── ICONS ──────────────────────────────────────────────────────
 const Icon = ({ name, size = 18 }) => {
   const icons = {
     dashboard: <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>,
@@ -227,6 +66,7 @@ const Icon = ({ name, size = 18 }) => {
     settings: <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>,
     delete: <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>,
     dispatch: <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>,
+    logout: <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>,
   };
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" style={{ flexShrink: 0 }}>
@@ -235,7 +75,7 @@ const Icon = ({ name, size = 18 }) => {
   );
 };
 
-// ─── STYLES ────────────────────────────────────────────────────
+// ─── STYLES ─────────────────────────────────────────────────────
 const COLORS = {
   forest: "#1a5c2e", forestLight: "#2d7a42", forestDark: "#0f3d1d",
   cream: "#faf8f3", warmWhite: "#fff9f0",
@@ -312,21 +152,225 @@ function InputField({ label, value, onChange, type = "text", placeholder = "", s
   );
 }
 
-// ─── MAIN APP COMPONENT ────────────────────────────────────────
-export default function FamilyFloristApp() {
+function CheckboxField({ label, checked, onChange }) {
+  return (
+    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", marginBottom: 8 }}>
+      <input type="checkbox" checked={checked} onChange={onChange} style={{ width: 16, height: 16 }} />
+      {label}
+    </label>
+  );
+}
+
+// ─── DB HELPERS ──────────────────────────────────────────────────
+function eventToDb(e) {
+  return {
+    name: e.name, holiday: e.holiday || "", year: e.year, status: e.status,
+    rate_per_hour: e.ratePerHour, dispatcher_rate: e.dispatcherRate,
+    drivers_needed: e.driversNeeded, check_date: e.checkDate || null,
+    info_packet_url: e.infoPacketUrl || "", liability_waiver_url: e.liabilityWaiverUrl || "",
+    signup_intro: e.signupIntro || "", days: e.days || [],
+  };
+}
+
+function eventFromDb(e) {
+  return {
+    id: e.id, name: e.name, holiday: e.holiday, year: e.year, status: e.status,
+    ratePerHour: Number(e.rate_per_hour), dispatcherRate: Number(e.dispatcher_rate),
+    driversNeeded: e.drivers_needed, checkDate: e.check_date || "",
+    infoPacketUrl: e.info_packet_url, liabilityWaiverUrl: e.liability_waiver_url,
+    signupIntro: e.signup_intro, days: e.days || [],
+  };
+}
+
+function driverToDb(d) {
+  return {
+    name: d.name, email: d.email || "", phone: d.phone || "", alt_phone: d.altPhone || "",
+    returning: d.returning || false, has_dl: d.hasDL || false, has_insurance: d.hasInsurance || false,
+    check_pref: d.checkPref || "pickup", mailing_address: d.mailingAddress || "",
+    signed_liability: d.signedLiability || false, status: d.status || "active", role: d.role || "driver",
+  };
+}
+
+function driverFromDb(d, driverEventsData) {
+  const events = {};
+  (driverEventsData || []).filter(de => de.driver_id === d.id).forEach(de => {
+    events[de.event_id] = {
+      signupDate: de.signup_date || "", availability: de.availability || {},
+      partialHours: de.partial_hours || {}, thursdayAvailable: de.thursday_available || false,
+      scheduled: de.scheduled || {}, hours: de.hours || {},
+      checkNumber: de.check_number || "", paid: de.paid || false,
+    };
+  });
+  return {
+    id: d.id, name: d.name, email: d.email, phone: d.phone, altPhone: d.alt_phone || "",
+    returning: d.returning, hasDL: d.has_dl, hasInsurance: d.has_insurance,
+    checkPref: d.check_pref, mailingAddress: d.mailing_address || "",
+    signedLiability: d.signed_liability, status: d.status, role: d.role, events,
+  };
+}
+
+const SAMPLE_TEMPLATES = [
+  { id: "tmpl-1", name: "Delivery Log Sheet", type: "PDF", description: "Driver delivery tracking sheet with signature lines", uploadDate: "2025-12-01" },
+  { id: "tmpl-2", name: "Liability Waiver", type: "PDF", description: "Independent contractor liability agreement", uploadDate: "2025-12-01" },
+  { id: "tmpl-3", name: "Driver Info Packet", type: "DOCX", description: "Welcome packet with instructions and map", uploadDate: "2026-01-15" },
+];
+
+// ─── MAIN APP COMPONENT ─────────────────────────────────────────
+export default function FamilyFloristApp({ supabase, user }) {
   const [view, setView] = useState("dashboard");
-  const [activeEvent, setActiveEvent] = useState("evt-1");
-  const [drivers, setDrivers] = useState(SAMPLE_DRIVERS);
-  const [events, setEvents] = useState(SAMPLE_EVENTS);
+  const [activeEvent, setActiveEvent] = useState("");
+  const [drivers, setDrivers] = useState([]);
+  const [events, setEvents] = useState([]);
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [showSignupPreview, setShowSignupPreview] = useState(false);
   const [printMode, setPrintMode] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const event = events.find((e) => e.id === activeEvent);
 
   function showToast(msg) { setToast(msg); setTimeout(() => setToast(null), 2500); }
+
+  // ─── DATA FETCHING ────────────────────────────────────────
+  useEffect(() => { fetchAllData(); }, []);
+
+  async function fetchAllData() {
+    setLoading(true);
+    const { data: eventsData } = await supabase.from("events").select("*").order("created_at");
+    const { data: driversData } = await supabase.from("drivers").select("*").order("name");
+    const { data: driverEventsData } = await supabase.from("driver_events").select("*");
+
+    const evts = (eventsData || []).map(eventFromDb);
+    const drvs = (driversData || []).map(d => driverFromDb(d, driverEventsData || []));
+
+    setEvents(evts);
+    setDrivers(drvs);
+    if (evts.length > 0 && !activeEvent) setActiveEvent(evts[0].id);
+    setLoading(false);
+  }
+
+  // ─── EVENT CRUD ───────────────────────────────────────────
+  async function saveEvent(eventId, updates) {
+    setEvents(prev => prev.map(e => e.id === eventId ? { ...e, ...updates } : e));
+    const dbUpdates = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.holiday !== undefined) dbUpdates.holiday = updates.holiday;
+    if (updates.year !== undefined) dbUpdates.year = updates.year;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.ratePerHour !== undefined) dbUpdates.rate_per_hour = updates.ratePerHour;
+    if (updates.dispatcherRate !== undefined) dbUpdates.dispatcher_rate = updates.dispatcherRate;
+    if (updates.driversNeeded !== undefined) dbUpdates.drivers_needed = updates.driversNeeded;
+    if (updates.checkDate !== undefined) dbUpdates.check_date = updates.checkDate || null;
+    if (updates.infoPacketUrl !== undefined) dbUpdates.info_packet_url = updates.infoPacketUrl;
+    if (updates.liabilityWaiverUrl !== undefined) dbUpdates.liability_waiver_url = updates.liabilityWaiverUrl;
+    if (updates.signupIntro !== undefined) dbUpdates.signup_intro = updates.signupIntro;
+    if (updates.days !== undefined) dbUpdates.days = updates.days;
+    if (Object.keys(dbUpdates).length > 0) {
+      await supabase.from("events").update(dbUpdates).eq("id", eventId);
+    }
+  }
+
+  async function createEvent(newEvt) {
+    const dbEvt = eventToDb(newEvt);
+    const { data, error } = await supabase.from("events").insert(dbEvt).select().single();
+    if (data) {
+      const evt = eventFromDb(data);
+      setEvents(prev => [...prev, evt]);
+      setActiveEvent(evt.id);
+      showToast("Event created!");
+      return evt;
+    }
+    if (error) showToast("Error creating event");
+    return null;
+  }
+
+  async function removeEvent(eventId) {
+    if (events.length <= 1) return;
+    await supabase.from("events").delete().eq("id", eventId);
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+    if (activeEvent === eventId) setActiveEvent(events.find(e => e.id !== eventId)?.id);
+    showToast("Event deleted");
+  }
+
+  // ─── DRIVER CRUD ──────────────────────────────────────────
+  async function createDriver(driverData, eventId) {
+    const dbDriver = driverToDb(driverData);
+    const { data, error } = await supabase.from("drivers").insert(dbDriver).select().single();
+    if (error || !data) { showToast("Error adding driver"); return; }
+
+    // Create driver_event link
+    const deData = {
+      driver_id: data.id, event_id: eventId,
+      signup_date: new Date().toISOString().split("T")[0],
+      availability: driverData.availability || {},
+      partial_hours: driverData.partialHours || {},
+      scheduled: driverData.scheduled || {},
+      hours: {}, check_number: "", paid: false,
+    };
+    await supabase.from("driver_events").insert(deData);
+    await fetchAllData();
+    showToast("Driver added!");
+  }
+
+  async function updateDriver(driverId, updates) {
+    setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, ...updates } : d));
+    const dbUpdates = {};
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.email !== undefined) dbUpdates.email = updates.email;
+    if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+    if (updates.altPhone !== undefined) dbUpdates.alt_phone = updates.altPhone;
+    if (updates.returning !== undefined) dbUpdates.returning = updates.returning;
+    if (updates.hasDL !== undefined) dbUpdates.has_dl = updates.hasDL;
+    if (updates.hasInsurance !== undefined) dbUpdates.has_insurance = updates.hasInsurance;
+    if (updates.checkPref !== undefined) dbUpdates.check_pref = updates.checkPref;
+    if (updates.mailingAddress !== undefined) dbUpdates.mailing_address = updates.mailingAddress;
+    if (updates.signedLiability !== undefined) dbUpdates.signed_liability = updates.signedLiability;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.role !== undefined) dbUpdates.role = updates.role;
+    if (Object.keys(dbUpdates).length > 0) {
+      await supabase.from("drivers").update(dbUpdates).eq("id", driverId);
+    }
+  }
+
+  async function removeDriver(driverId) {
+    await supabase.from("drivers").delete().eq("id", driverId);
+    setDrivers(prev => prev.filter(d => d.id !== driverId));
+    setSelectedDriver(null);
+    showToast("Driver removed");
+  }
+
+  async function saveDriverEvent(driverId, eventId, field, value) {
+    // Update local state
+    setDrivers(prev => prev.map(d => {
+      if (d.id !== driverId) return d;
+      const updated = { ...d, events: { ...d.events } };
+      updated.events[eventId] = { ...updated.events[eventId], [field]: value };
+      return updated;
+    }));
+    // Save to DB
+    const dbField = { signupDate: "signup_date", availability: "availability", partialHours: "partial_hours",
+      thursdayAvailable: "thursday_available", scheduled: "scheduled", hours: "hours",
+      checkNumber: "check_number", paid: "paid" }[field] || field;
+    await supabase.from("driver_events").update({ [dbField]: value }).eq("driver_id", driverId).eq("event_id", eventId);
+  }
+
+  async function addDriverToEvent(driverId, eventId) {
+    const deData = {
+      driver_id: driverId, event_id: eventId,
+      signup_date: new Date().toISOString().split("T")[0],
+      availability: {}, partial_hours: {}, scheduled: {}, hours: {},
+      check_number: "", paid: false,
+    };
+    await supabase.from("driver_events").upsert(deData, { onConflict: "driver_id,event_id" });
+    await fetchAllData();
+  }
+
+  // ─── LOGOUT ───────────────────────────────────────────────
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -340,6 +384,14 @@ export default function FamilyFloristApp() {
   ];
 
   if (printMode) return <PrintView mode={printMode} event={event} drivers={drivers} activeEvent={activeEvent} onClose={() => setPrintMode(null)} />;
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: COLORS.bg }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: 24, fontWeight: 700, color: COLORS.forest, fontFamily: "'Playfair Display', serif" }}>Loading...</div>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ minHeight: "100vh", background: COLORS.bg, fontFamily: "'Libre Franklin', 'Segoe UI', system-ui, sans-serif" }}>
@@ -360,11 +412,16 @@ export default function FamilyFloristApp() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <select value={activeEvent} onChange={(e) => setActiveEvent(e.target.value)}
-            style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "6px 12px", fontSize: 13, fontWeight: 500, cursor: "pointer", outline: "none" }}>
-            {events.map((e) => (<option key={e.id} value={e.id} style={{ color: "#333", background: "#fff" }}>{e.name}</option>))}
-          </select>
-          <div style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: event?.status === "active" ? COLORS.success : COLORS.gold, color: "#fff", textTransform: "uppercase" }}>{event?.status}</div>
+          {events.length > 0 && (
+            <select value={activeEvent} onChange={(e) => setActiveEvent(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "6px 12px", fontSize: 13, fontWeight: 500, cursor: "pointer", outline: "none" }}>
+              {events.map((e) => (<option key={e.id} value={e.id} style={{ color: "#333", background: "#fff" }}>{e.name}</option>))}
+            </select>
+          )}
+          {event && <div style={{ padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: event.status === "active" ? COLORS.success : COLORS.gold, color: "#fff", textTransform: "uppercase" }}>{event.status}</div>}
+          <button onClick={handleLogout} style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 8, padding: "6px 10px", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+            <Icon name="logout" size={16} /> Sign Out
+          </button>
         </div>
       </header>
 
@@ -385,18 +442,29 @@ export default function FamilyFloristApp() {
         </nav>
 
         <main style={{ flex: 1, padding: 28, maxWidth: 1100, overflowX: "auto" }}>
-          {view === "dashboard" && <DashboardView event={event} drivers={drivers} activeEvent={activeEvent} setView={setView} />}
-          {view === "drivers" && (
-            selectedDriver
-              ? <DriverDetail driver={selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} setDrivers={setDrivers} onBack={() => setSelectedDriver(null)} />
-              : <DriversView drivers={drivers} event={event} activeEvent={activeEvent} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSelect={setSelectedDriver} setDrivers={setDrivers} />
+          {events.length === 0 && view !== "event-settings" ? (
+            <div style={{ textAlign: "center", padding: 60 }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🌸</div>
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, marginBottom: 8 }}>Welcome to Family Florist</h2>
+              <p style={{ color: COLORS.textMuted, marginBottom: 24 }}>Create your first event to get started.</p>
+              <Btn icon="add" onClick={() => setView("event-settings")}>Create First Event</Btn>
+            </div>
+          ) : (
+            <>
+              {view === "dashboard" && <DashboardView event={event} drivers={drivers} activeEvent={activeEvent} setView={setView} />}
+              {view === "drivers" && (
+                selectedDriver
+                  ? <DriverDetail driver={selectedDriver} event={event} activeEvent={activeEvent} drivers={drivers} updateDriver={updateDriver} removeDriver={removeDriver} saveDriverEvent={saveDriverEvent} onBack={() => setSelectedDriver(null)} showToast={showToast} />
+                  : <DriversView drivers={drivers} event={event} activeEvent={activeEvent} searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSelect={setSelectedDriver} updateDriver={updateDriver} createDriver={createDriver} showToast={showToast} />
+              )}
+              {view === "schedule" && <ScheduleView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} />}
+              {view === "hours" && <HoursView event={event} drivers={drivers} activeEvent={activeEvent} saveDriverEvent={saveDriverEvent} />}
+              {view === "summary" && <SummaryView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} saveDriverEvent={saveDriverEvent} />}
+              {view === "templates" && <TemplatesView />}
+              {view === "signup" && <SignupView event={event} events={events} saveEvent={saveEvent} activeEvent={activeEvent} showToast={showToast} showSignupPreview={showSignupPreview} setShowSignupPreview={setShowSignupPreview} />}
+              {view === "event-settings" && <EventSettingsView events={events} createEvent={createEvent} saveEvent={saveEvent} removeEvent={removeEvent} activeEvent={activeEvent} setActiveEvent={setActiveEvent} showToast={showToast} />}
+            </>
           )}
-          {view === "schedule" && <ScheduleView event={event} drivers={drivers} activeEvent={activeEvent} setPrintMode={setPrintMode} />}
-          {view === "hours" && <HoursView event={event} drivers={drivers} setDrivers={setDrivers} activeEvent={activeEvent} />}
-          {view === "summary" && <SummaryView event={event} drivers={drivers} setDrivers={setDrivers} activeEvent={activeEvent} setPrintMode={setPrintMode} />}
-          {view === "templates" && <TemplatesView />}
-          {view === "signup" && <SignupView event={event} events={events} setEvents={setEvents} activeEvent={activeEvent} showToast={showToast} showSignupPreview={showSignupPreview} setShowSignupPreview={setShowSignupPreview} />}
-          {view === "event-settings" && <EventSettingsView events={events} setEvents={setEvents} activeEvent={activeEvent} setActiveEvent={setActiveEvent} showToast={showToast} />}
         </main>
       </div>
 
@@ -421,44 +489,33 @@ export default function FamilyFloristApp() {
 // ═══════════════════════════════════════════════════════════════
 // EVENT SETTINGS VIEW
 // ═══════════════════════════════════════════════════════════════
-function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, showToast }) {
+function EventSettingsView({ events, createEvent, saveEvent, removeEvent, activeEvent, setActiveEvent, showToast }) {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [newEvt, setNewEvt] = useState({ name: "", holiday: "", year: new Date().getFullYear(), ratePerHour: 15, dispatcherRate: 20, driversNeeded: 15, checkDate: "" });
   const [addingDay, setAddingDay] = useState(null);
   const [newDay, setNewDay] = useState({ date: "", startTime: "7:30 AM", endTime: "5:00 PM" });
   const evt = events.find((e) => e.id === activeEvent);
 
-  function updateEvent(eventId, updates) { setEvents(prev => prev.map(e => e.id === eventId ? { ...e, ...updates } : e)); }
-
-  function addEvent() {
+  async function handleAddEvent() {
     if (!newEvt.name) return;
-    const id = "evt-" + Date.now();
-    setEvents(prev => [...prev, { id, ...newEvt, status: "upcoming", days: [], infoPacketUrl: "", liabilityWaiverUrl: "", signupIntro: "Drivers will deliver flower arrangements on the dates listed below. Must have valid DL, insurance, and a vehicle." }]);
-    setActiveEvent(id);
+    await createEvent({ ...newEvt, status: "upcoming", days: [], infoPacketUrl: "", liabilityWaiverUrl: "", signupIntro: "Drivers will deliver flower arrangements on the dates listed below. Must have valid DL, insurance, and a vehicle." });
     setShowAddEvent(false);
     setNewEvt({ name: "", holiday: "", year: new Date().getFullYear(), ratePerHour: 15, dispatcherRate: 20, driversNeeded: 15, checkDate: "" });
-    showToast("Event created!");
   }
 
-  function addDay(eventId) {
-    if (!newDay.date) return;
-    const dayId = "d-" + Date.now();
-    setEvents(prev => prev.map(e => e.id !== eventId ? e : { ...e, days: [...e.days, { id: dayId, date: newDay.date, label: formatDateLabel(newDay.date), startTime: newDay.startTime, endTime: newDay.endTime }] }));
+  async function addDay(eventId) {
+    if (!newDay.date || !evt) return;
+    const day = { id: "d-" + Date.now(), date: newDay.date, label: formatDateLabel(newDay.date), startTime: newDay.startTime, endTime: newDay.endTime };
+    await saveEvent(eventId, { days: [...evt.days, day] });
     setAddingDay(null);
     setNewDay({ date: "", startTime: "7:30 AM", endTime: "5:00 PM" });
     showToast("Day added!");
   }
 
-  function removeDay(eventId, dayId) {
-    setEvents(prev => prev.map(e => e.id !== eventId ? e : { ...e, days: e.days.filter(d => d.id !== dayId) }));
+  async function removeDay(eventId, dayId) {
+    if (!evt) return;
+    await saveEvent(eventId, { days: evt.days.filter(d => d.id !== dayId) });
     showToast("Day removed");
-  }
-
-  function deleteEvent(eventId) {
-    if (events.length <= 1) return;
-    setEvents(prev => prev.filter(e => e.id !== eventId));
-    if (activeEvent === eventId) setActiveEvent(events.find(e => e.id !== eventId)?.id);
-    showToast("Event deleted");
   }
 
   return (
@@ -481,7 +538,7 @@ function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, sho
             <InputField label="Check Date" type="date" value={newEvt.checkDate} onChange={(e) => setNewEvt(p => ({ ...p, checkDate: e.target.value }))} />
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <Btn onClick={addEvent}>Create Event</Btn>
+            <Btn onClick={handleAddEvent}>Create Event</Btn>
             <Btn variant="ghost" onClick={() => setShowAddEvent(false)}>Cancel</Btn>
           </div>
         </Card>
@@ -495,31 +552,29 @@ function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, sho
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 4, textTransform: "uppercase" }}>Driver Rate ($/hr)</label>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ fontSize: 18, fontWeight: 700, color: COLORS.forest }}>$</span>
-                  <input type="number" min="0" step="0.50" value={evt.ratePerHour} onChange={(e) => updateEvent(evt.id, { ratePerHour: Number(e.target.value) })}
+                  <input type="number" min="0" step="0.50" value={evt.ratePerHour} onChange={(e) => saveEvent(evt.id, { ratePerHour: Number(e.target.value) })}
                     style={{ width: 80, padding: "10px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 18, fontWeight: 700, color: COLORS.forest }} />
                 </div>
-                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>Standard delivery drivers</div>
               </div>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 4, textTransform: "uppercase" }}>Dispatcher Rate ($/hr)</label>
                 <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                   <span style={{ fontSize: 18, fontWeight: 700, color: COLORS.purple }}>$</span>
-                  <input type="number" min="0" step="0.50" value={evt.dispatcherRate} onChange={(e) => updateEvent(evt.id, { dispatcherRate: Number(e.target.value) })}
+                  <input type="number" min="0" step="0.50" value={evt.dispatcherRate} onChange={(e) => saveEvent(evt.id, { dispatcherRate: Number(e.target.value) })}
                     style={{ width: 80, padding: "10px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 18, fontWeight: 700, color: COLORS.purple }} />
                 </div>
-                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 4 }}>Up to 2 dispatchers per event</div>
               </div>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 4, textTransform: "uppercase" }}>Drivers Needed / Day</label>
-                <input type="number" min="1" value={evt.driversNeeded} onChange={(e) => updateEvent(evt.id, { driversNeeded: Number(e.target.value) })}
+                <input type="number" min="1" value={evt.driversNeeded} onChange={(e) => saveEvent(evt.id, { driversNeeded: Number(e.target.value) })}
                   style={{ width: 80, padding: "10px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 18, fontWeight: 700 }} />
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 20 }}>
-              <InputField label="Check Date" type="date" value={evt.checkDate} onChange={(e) => updateEvent(evt.id, { checkDate: e.target.value })} small />
+              <InputField label="Check Date" type="date" value={evt.checkDate} onChange={(e) => saveEvent(evt.id, { checkDate: e.target.value })} small />
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 4, textTransform: "uppercase" }}>Status</label>
-                <select value={evt.status} onChange={(e) => updateEvent(evt.id, { status: e.target.value })}
+                <select value={evt.status} onChange={(e) => saveEvent(evt.id, { status: e.target.value })}
                   style={{ padding: "8px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13 }}>
                   <option value="upcoming">Upcoming</option>
                   <option value="active">Active</option>
@@ -530,7 +585,7 @@ function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, sho
           </Card>
 
           <Card title={`Event Dates — ${evt.name}`} action={<Btn small icon="add" onClick={() => setAddingDay(evt.id)}>Add Day</Btn>}>
-            {evt.days.length === 0 && <p style={{ fontSize: 13, color: COLORS.textMuted, fontStyle: "italic" }}>No days added yet. Click "Add Day" to get started.</p>}
+            {evt.days.length === 0 && <p style={{ fontSize: 13, color: COLORS.textMuted, fontStyle: "italic" }}>No days added yet.</p>}
             {evt.days.map((day, i) => (
               <div key={day.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", background: i % 2 === 0 ? COLORS.cream : "transparent", borderRadius: 8, marginBottom: 4 }}>
                 <div style={{ flex: 1 }}>
@@ -544,8 +599,8 @@ function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, sho
               <div style={{ marginTop: 16, padding: 16, background: COLORS.cream, borderRadius: 8, border: `1px dashed ${COLORS.border}` }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
                   <InputField label="Date" type="date" value={newDay.date} onChange={(e) => setNewDay(p => ({ ...p, date: e.target.value }))} small />
-                  <InputField label="Start Time" value={newDay.startTime} onChange={(e) => setNewDay(p => ({ ...p, startTime: e.target.value }))} small placeholder="7:30 AM" />
-                  <InputField label="End Time" value={newDay.endTime} onChange={(e) => setNewDay(p => ({ ...p, endTime: e.target.value }))} small placeholder="5:00 PM" />
+                  <InputField label="Start Time" value={newDay.startTime} onChange={(e) => setNewDay(p => ({ ...p, startTime: e.target.value }))} small />
+                  <InputField label="End Time" value={newDay.endTime} onChange={(e) => setNewDay(p => ({ ...p, endTime: e.target.value }))} small />
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <Btn small onClick={() => addDay(evt.id)}>Add Day</Btn>
@@ -556,19 +611,17 @@ function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, sho
           </Card>
 
           <Card title="Document Links for Signup Form">
-            <p style={{ fontSize: 12, color: COLORS.textMuted, margin: "0 0 16px" }}>These links appear on the signup form so drivers can view documents before signing up.</p>
-            <InputField label="Driver Information Packet URL" value={evt.infoPacketUrl || ""} onChange={(e) => updateEvent(evt.id, { infoPacketUrl: e.target.value })} placeholder="https://drive.google.com/file/d/..." />
-            <InputField label="Liability Waiver URL" value={evt.liabilityWaiverUrl || ""} onChange={(e) => updateEvent(evt.id, { liabilityWaiverUrl: e.target.value })} placeholder="https://drive.google.com/file/d/..." />
-            <Btn small icon="check" onClick={() => showToast("Document links saved!")}>Save Links</Btn>
+            <InputField label="Driver Information Packet URL" value={evt.infoPacketUrl || ""} onChange={(e) => saveEvent(evt.id, { infoPacketUrl: e.target.value })} placeholder="https://drive.google.com/..." />
+            <InputField label="Liability Waiver URL" value={evt.liabilityWaiverUrl || ""} onChange={(e) => saveEvent(evt.id, { liabilityWaiverUrl: e.target.value })} placeholder="https://drive.google.com/..." />
           </Card>
 
           <Card title="Danger Zone" style={{ borderColor: "#fecaca" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>Delete this event</div>
-                <div style={{ fontSize: 12, color: COLORS.textMuted }}>This cannot be undone. All driver data for this event will be lost.</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted }}>This cannot be undone.</div>
               </div>
-              <Btn small variant="danger" icon="delete" onClick={() => deleteEvent(evt.id)}>Delete Event</Btn>
+              <Btn small variant="danger" icon="delete" onClick={() => removeEvent(evt.id)}>Delete Event</Btn>
             </div>
           </Card>
         </div>
@@ -577,7 +630,7 @@ function EventSettingsView({ events, setEvents, activeEvent, setActiveEvent, sho
       <Card title="All Events" style={{ marginTop: 24 }}>
         {events.map((e) => (
           <div key={e.id} onClick={() => setActiveEvent(e.id)}
-            style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 8, cursor: "pointer", background: e.id === activeEvent ? COLORS.rosePale : "transparent", marginBottom: 4, border: e.id === activeEvent ? `1px solid ${COLORS.rose}30` : "1px solid transparent" }}>
+            style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 8, cursor: "pointer", background: e.id === activeEvent ? COLORS.rosePale : "transparent", marginBottom: 4 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: 14 }}>{e.name}</div>
               <div style={{ fontSize: 12, color: COLORS.textMuted }}>{e.days.length} day{e.days.length !== 1 ? "s" : ""} · Driver: {formatCurrency(e.ratePerHour)}/hr · Dispatcher: {formatCurrency(e.dispatcherRate || e.ratePerHour)}/hr</div>
@@ -628,7 +681,7 @@ function DashboardView({ event, drivers, activeEvent, setView }) {
                   <span style={{ color: COLORS.textMuted }}>{count} / {event.driversNeeded}</span>
                 </div>
                 <div style={{ height: 8, background: COLORS.borderLight, borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? COLORS.success : COLORS.gold, borderRadius: 4, transition: "width 0.5s" }} />
+                  <div style={{ height: "100%", width: `${pct}%`, background: pct >= 100 ? COLORS.success : COLORS.gold, borderRadius: 4 }} />
                 </div>
               </div>
             );
@@ -636,30 +689,11 @@ function DashboardView({ event, drivers, activeEvent, setView }) {
         </Card>
         <Card title="Quick Actions">
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <Btn icon="link" onClick={() => setView("signup")}>Copy Signup Link</Btn>
-            <Btn icon="calendar" variant="secondary" onClick={() => setView("schedule")}>View Full Schedule</Btn>
-            <Btn icon="clock" variant="secondary" onClick={() => setView("hours")}>Enter Driver Hours</Btn>
+            <Btn icon="drivers" onClick={() => setView("drivers")}>Manage Drivers</Btn>
+            <Btn icon="calendar" variant="secondary" onClick={() => setView("schedule")}>View Schedule</Btn>
+            <Btn icon="clock" variant="secondary" onClick={() => setView("hours")}>Enter Hours</Btn>
             <Btn icon="settings" variant="secondary" onClick={() => setView("event-settings")}>Event Settings</Btn>
           </div>
-        </Card>
-        <Card title="Recent Signups" style={{ gridColumn: "1 / -1" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr style={{ borderBottom: `2px solid ${COLORS.borderLight}` }}>
-              {["Driver", "Role", "Signup Date", "Documents"].map((h) => (
-                <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: COLORS.textMuted, fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {eventDrivers.slice(0, 6).map((d) => (
-                <tr key={d.id} style={{ borderBottom: `1px solid ${COLORS.borderLight}` }}>
-                  <td style={{ padding: "10px 12px", fontWeight: 500 }}>{d.name}</td>
-                  <td style={{ padding: "10px 12px" }}><Badge color={d.role === "dispatcher" ? COLORS.purple : COLORS.forest}>{d.role === "dispatcher" ? "Dispatcher" : "Driver"}</Badge></td>
-                  <td style={{ padding: "10px 12px", color: COLORS.textMuted }}>{d.events[activeEvent]?.signupDate}</td>
-                  <td style={{ padding: "10px 12px" }}>{d.hasDL && d.hasInsurance ? <Badge color={COLORS.success}>Complete</Badge> : <Badge color={COLORS.danger}>Missing</Badge>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </Card>
       </div>
     </div>
@@ -667,20 +701,37 @@ function DashboardView({ event, drivers, activeEvent, setView }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DRIVERS VIEW
+// DRIVERS VIEW (with Add Driver form)
 // ═══════════════════════════════════════════════════════════════
-function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, onSelect, setDrivers }) {
+function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, onSelect, updateDriver, createDriver, showToast }) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [newDrv, setNewDrv] = useState({ name: "", email: "", phone: "", altPhone: "", returning: false, hasDL: false, hasInsurance: false, signedLiability: false, checkPref: "pickup", mailingAddress: "", availability: {}, partialHours: {}, scheduled: {} });
+
   const eventDrivers = drivers.filter((d) => d.events?.[activeEvent]);
   const dispatcherCount = eventDrivers.filter(d => d.role === "dispatcher").length;
   const filtered = eventDrivers.filter((d) => d.name.toLowerCase().includes(searchTerm.toLowerCase()) || d.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
   function toggleRole(driverId) {
-    setDrivers(prev => prev.map(d => {
-      if (d.id !== driverId) return d;
-      const otherDispatchers = prev.filter(x => x.role === "dispatcher" && x.id !== driverId).length;
-      if (d.role === "driver" && otherDispatchers >= 2) return d;
-      return { ...d, role: d.role === "dispatcher" ? "driver" : "dispatcher" };
-    }));
+    const d = drivers.find(x => x.id === driverId);
+    if (!d) return;
+    const otherDispatchers = drivers.filter(x => x.role === "dispatcher" && x.id !== driverId).length;
+    if (d.role === "driver" && otherDispatchers >= 2) return;
+    updateDriver(driverId, { role: d.role === "dispatcher" ? "driver" : "dispatcher" });
+  }
+
+  async function handleAddDriver() {
+    if (!newDrv.name) { showToast("Name is required"); return; }
+    // Build scheduled from availability
+    const scheduled = {};
+    if (event?.days) {
+      event.days.forEach(day => {
+        const avail = newDrv.availability[day.id];
+        if (avail && avail !== "unavailable") scheduled[day.id] = true;
+      });
+    }
+    await createDriver({ ...newDrv, scheduled }, activeEvent);
+    setShowAdd(false);
+    setNewDrv({ name: "", email: "", phone: "", altPhone: "", returning: false, hasDL: false, hasInsurance: false, signedLiability: false, checkPref: "pickup", mailingAddress: "", availability: {}, partialHours: {}, scheduled: {} });
   }
 
   return (
@@ -688,11 +739,71 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Drivers ({eventDrivers.length})</h2>
-          <p style={{ margin: "4px 0 0", fontSize: 12, color: COLORS.textMuted }}>Dispatchers: {dispatcherCount}/2 · Rate: {formatCurrency(event?.dispatcherRate || 15)}/hr</p>
+          <p style={{ margin: "4px 0 0", fontSize: 12, color: COLORS.textMuted }}>Dispatchers: {dispatcherCount}/2</p>
         </div>
-        <input type="text" placeholder="Search drivers..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: "8px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, width: 220, background: COLORS.white }} />
+        <div style={{ display: "flex", gap: 8 }}>
+          <input type="text" placeholder="Search..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ padding: "8px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, width: 180, background: COLORS.white }} />
+          <Btn icon="add" onClick={() => setShowAdd(true)}>Add Driver</Btn>
+        </div>
       </div>
+
+      {showAdd && (
+        <Card title="Add New Driver" style={{ marginBottom: 20, border: `2px solid ${COLORS.forest}` }}
+          action={<Btn small variant="ghost" icon="close" onClick={() => setShowAdd(false)} />}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+            <InputField label="Full Name *" value={newDrv.name} onChange={(e) => setNewDrv(p => ({ ...p, name: e.target.value }))} placeholder="Jane Smith" />
+            <InputField label="Email" value={newDrv.email} onChange={(e) => setNewDrv(p => ({ ...p, email: e.target.value }))} placeholder="jane@email.com" />
+            <InputField label="Cell Phone" value={newDrv.phone} onChange={(e) => setNewDrv(p => ({ ...p, phone: e.target.value }))} placeholder="(479) 555-1234" />
+            <InputField label="Alt Phone" value={newDrv.altPhone} onChange={(e) => setNewDrv(p => ({ ...p, altPhone: e.target.value }))} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px", marginBottom: 12 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 4, textTransform: "uppercase" }}>Check Preference</label>
+              <select value={newDrv.checkPref} onChange={(e) => setNewDrv(p => ({ ...p, checkPref: e.target.value }))}
+                style={{ padding: "8px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, width: "100%", marginBottom: 16 }}>
+                <option value="pickup">Pickup</option>
+                <option value="mail">Mail</option>
+              </select>
+            </div>
+            {newDrv.checkPref === "mail" && (
+              <InputField label="Mailing Address" value={newDrv.mailingAddress} onChange={(e) => setNewDrv(p => ({ ...p, mailingAddress: e.target.value }))} />
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
+            <CheckboxField label="Returning Driver" checked={newDrv.returning} onChange={(e) => setNewDrv(p => ({ ...p, returning: e.target.checked }))} />
+            <CheckboxField label="Driver's License" checked={newDrv.hasDL} onChange={(e) => setNewDrv(p => ({ ...p, hasDL: e.target.checked }))} />
+            <CheckboxField label="Insurance" checked={newDrv.hasInsurance} onChange={(e) => setNewDrv(p => ({ ...p, hasInsurance: e.target.checked }))} />
+            <CheckboxField label="Liability Waiver" checked={newDrv.signedLiability} onChange={(e) => setNewDrv(p => ({ ...p, signedLiability: e.target.checked }))} />
+          </div>
+          {event?.days && event.days.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 8, textTransform: "uppercase" }}>Availability</label>
+              {event.days.map(day => (
+                <div key={day.id} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, padding: "8px 12px", background: COLORS.cream, borderRadius: 8 }}>
+                  <span style={{ fontWeight: 500, fontSize: 13, minWidth: 160 }}>{day.label}</span>
+                  <select value={newDrv.availability[day.id] || "all_day"} onChange={(e) => setNewDrv(p => ({ ...p, availability: { ...p.availability, [day.id]: e.target.value } }))}
+                    style={{ padding: "6px 10px", border: `1px solid ${COLORS.border}`, borderRadius: 6, fontSize: 13 }}>
+                    <option value="all_day">All Day</option>
+                    <option value="partial">Partial</option>
+                    <option value="unavailable">Unavailable</option>
+                  </select>
+                  {newDrv.availability[day.id] === "partial" && (
+                    <input type="text" placeholder="e.g. 8:30 AM - 3:00 PM" value={newDrv.partialHours[day.id] || ""}
+                      onChange={(e) => setNewDrv(p => ({ ...p, partialHours: { ...p.partialHours, [day.id]: e.target.value } }))}
+                      style={{ padding: "6px 10px", border: `1px solid ${COLORS.border}`, borderRadius: 6, fontSize: 13, flex: 1 }} />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn onClick={handleAddDriver}>Add Driver</Btn>
+            <Btn variant="ghost" onClick={() => setShowAdd(false)}>Cancel</Btn>
+          </div>
+        </Card>
+      )}
+
       <Card padding={0}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead><tr style={{ borderBottom: `2px solid ${COLORS.borderLight}` }}>
@@ -701,6 +812,11 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
             ))}
           </tr></thead>
           <tbody>
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} style={{ padding: 24, textAlign: "center", color: COLORS.textMuted, fontStyle: "italic" }}>
+                {eventDrivers.length === 0 ? 'No drivers yet. Click "Add Driver" to get started.' : "No matching drivers."}
+              </td></tr>
+            )}
             {filtered.map((d) => (
               <tr key={d.id} style={{ borderBottom: `1px solid ${COLORS.borderLight}`, cursor: "pointer" }}
                 onMouseEnter={(e) => e.currentTarget.style.background = COLORS.cream}
@@ -734,59 +850,96 @@ function DriversView({ drivers, event, activeEvent, searchTerm, setSearchTerm, o
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DRIVER DETAIL
+// DRIVER DETAIL (with Edit & Delete)
 // ═══════════════════════════════════════════════════════════════
-function DriverDetail({ driver, event, activeEvent, drivers, setDrivers, onBack }) {
+function DriverDetail({ driver, event, activeEvent, drivers, updateDriver, removeDriver, saveDriverEvent, onBack, showToast }) {
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ ...driver });
   const evtData = driver.events?.[activeEvent];
   const rate = getDriverRate(driver, event);
   const totals = calcDriverEventTotal(driver, activeEvent, event);
 
+  function startEdit() { setForm({ ...driver }); setEditing(true); }
+  async function saveEdit() {
+    await updateDriver(driver.id, {
+      name: form.name, email: form.email, phone: form.phone, altPhone: form.altPhone,
+      returning: form.returning, hasDL: form.hasDL, hasInsurance: form.hasInsurance,
+      checkPref: form.checkPref, mailingAddress: form.mailingAddress,
+      signedLiability: form.signedLiability,
+    });
+    setEditing(false);
+    showToast("Driver updated!");
+  }
+
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       <Btn variant="ghost" icon="back" onClick={onBack} style={{ marginBottom: 16 }}>Back to Drivers</Btn>
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", background: driver.role === "dispatcher" ? `linear-gradient(135deg, ${COLORS.purple}, #a78bfa)` : `linear-gradient(135deg, ${COLORS.forest}, ${COLORS.forestLight})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>{driver.name.charAt(0)}</div>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>{driver.name}</h2>
-          <p style={{ margin: 0, fontSize: 13, color: COLORS.textMuted }}>
-            <Badge color={driver.role === "dispatcher" ? COLORS.purple : COLORS.forest}>{driver.role === "dispatcher" ? "Dispatcher" : "Driver"}</Badge>
-            {" · "}{driver.returning ? "Returning" : "New"} · Rate: {formatCurrency(rate)}/hr
-          </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: driver.role === "dispatcher" ? `linear-gradient(135deg, ${COLORS.purple}, #a78bfa)` : `linear-gradient(135deg, ${COLORS.forest}, ${COLORS.forestLight})`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>{driver.name.charAt(0)}</div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>{driver.name}</h2>
+            <p style={{ margin: 0, fontSize: 13, color: COLORS.textMuted }}>
+              <Badge color={driver.role === "dispatcher" ? COLORS.purple : COLORS.forest}>{driver.role === "dispatcher" ? "Dispatcher" : "Driver"}</Badge>
+              {" · "}{driver.returning ? "Returning" : "New"} · Rate: {formatCurrency(rate)}/hr
+            </p>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {!editing && <Btn small icon="edit" variant="secondary" onClick={startEdit}>Edit</Btn>}
+          {editing && <Btn small icon="check" onClick={saveEdit}>Save</Btn>}
+          {editing && <Btn small variant="ghost" onClick={() => setEditing(false)}>Cancel</Btn>}
         </div>
       </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <Card title="Contact Information">
-          <div style={{ display: "grid", gap: 14, fontSize: 13 }}>
-            {[["Email", driver.email], ["Phone", driver.phone], ["Alt Phone", driver.altPhone || "—"], ["Check Preference", driver.checkPref === "pickup" ? "Pickup at Family Florist" : "Mail"],
-              ...(driver.checkPref === "mail" ? [["Mailing Address", driver.mailingAddress || "—"]] : [])].map(([l, v]) => (
-              <div key={l}><div style={{ color: COLORS.textMuted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>{l}</div><div style={{ fontWeight: 500 }}>{v}</div></div>
-            ))}
-          </div>
+          {editing ? (
+            <div>
+              <InputField label="Name" value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} small />
+              <InputField label="Email" value={form.email} onChange={(e) => setForm(p => ({ ...p, email: e.target.value }))} small />
+              <InputField label="Phone" value={form.phone} onChange={(e) => setForm(p => ({ ...p, phone: e.target.value }))} small />
+              <InputField label="Alt Phone" value={form.altPhone} onChange={(e) => setForm(p => ({ ...p, altPhone: e.target.value }))} small />
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: COLORS.textMuted, marginBottom: 4, textTransform: "uppercase" }}>Check Preference</label>
+                <select value={form.checkPref} onChange={(e) => setForm(p => ({ ...p, checkPref: e.target.value }))}
+                  style={{ padding: "8px 12px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13 }}>
+                  <option value="pickup">Pickup</option>
+                  <option value="mail">Mail</option>
+                </select>
+              </div>
+              {form.checkPref === "mail" && <InputField label="Mailing Address" value={form.mailingAddress} onChange={(e) => setForm(p => ({ ...p, mailingAddress: e.target.value }))} small />}
+              <CheckboxField label="Returning Driver" checked={form.returning} onChange={(e) => setForm(p => ({ ...p, returning: e.target.checked }))} />
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 14, fontSize: 13 }}>
+              {[["Email", driver.email], ["Phone", driver.phone], ["Alt Phone", driver.altPhone || "—"], ["Check Preference", driver.checkPref === "pickup" ? "Pickup at Family Florist" : "Mail"],
+                ...(driver.checkPref === "mail" ? [["Mailing Address", driver.mailingAddress || "—"]] : [])].map(([l, v]) => (
+                <div key={l}><div style={{ color: COLORS.textMuted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>{l}</div><div style={{ fontWeight: 500 }}>{v}</div></div>
+              ))}
+            </div>
+          )}
         </Card>
+
         <Card title="Documents & Compliance">
-          <div style={{ display: "grid", gap: 14 }}>
-            {[["Driver's License", driver.hasDL], ["Insurance Card", driver.hasInsurance], ["Liability Waiver", driver.signedLiability]].map(([label, ok]) => (
-              <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: ok ? "#f0faf4" : COLORS.rosePale, borderRadius: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{label}</span>
-                <Badge color={ok ? COLORS.success : COLORS.danger}>{ok ? "On File" : "Missing"}</Badge>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <Card title={`Availability — ${event?.name}`}>
-          {event?.days.map((day) => {
-            const avail = evtData?.availability?.[day.id];
-            const partial = evtData?.partialHours?.[day.id];
-            return (
-              <div key={day.id} style={{ marginBottom: 14, padding: "10px 14px", background: COLORS.cream, borderRadius: 8 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{day.label}</div>
-                <div style={{ fontSize: 12, color: avail === "all_day" ? COLORS.success : avail === "partial" ? COLORS.gold : COLORS.danger, fontWeight: 500 }}>
-                  {avail === "all_day" ? `Available All Day (${day.startTime} – ${day.endTime})` : avail === "partial" ? `Partial: ${partial || "TBD"}` : "Not Available"}
+          {editing ? (
+            <div>
+              <CheckboxField label="Driver's License on File" checked={form.hasDL} onChange={(e) => setForm(p => ({ ...p, hasDL: e.target.checked }))} />
+              <CheckboxField label="Insurance Card on File" checked={form.hasInsurance} onChange={(e) => setForm(p => ({ ...p, hasInsurance: e.target.checked }))} />
+              <CheckboxField label="Liability Waiver Signed" checked={form.signedLiability} onChange={(e) => setForm(p => ({ ...p, signedLiability: e.target.checked }))} />
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 14 }}>
+              {[["Driver's License", driver.hasDL], ["Insurance Card", driver.hasInsurance], ["Liability Waiver", driver.signedLiability]].map(([label, ok]) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: ok ? "#f0faf4" : COLORS.rosePale, borderRadius: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{label}</span>
+                  <Badge color={ok ? COLORS.success : COLORS.danger}>{ok ? "On File" : "Missing"}</Badge>
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          )}
         </Card>
+
         <Card title={`Pay Summary — ${event?.name}`}>
           <div style={{ display: "grid", gap: 12, fontSize: 13 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: COLORS.textMuted }}>Role</span><Badge color={driver.role === "dispatcher" ? COLORS.purple : COLORS.forest}>{driver.role === "dispatcher" ? "Dispatcher" : "Driver"}</Badge></div>
@@ -796,6 +949,16 @@ function DriverDetail({ driver, event, activeEvent, drivers, setDrivers, onBack 
             <hr style={{ border: "none", borderTop: `1px solid ${COLORS.border}`, margin: "4px 0" }} />
             <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontWeight: 700, fontSize: 14 }}>Total Pay</span><span style={{ fontWeight: 700, fontSize: 16, color: COLORS.forest }}>{formatCurrency(totals.totalPay)}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: COLORS.textMuted }}>Status</span><Badge color={evtData?.paid ? COLORS.success : COLORS.warning}>{evtData?.paid ? "Paid" : "Unpaid"}</Badge></div>
+          </div>
+        </Card>
+
+        <Card title="Danger Zone" style={{ borderColor: "#fecaca" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>Remove this driver</div>
+              <div style={{ fontSize: 12, color: COLORS.textMuted }}>This will delete the driver and all their data.</div>
+            </div>
+            <Btn small variant="danger" icon="delete" onClick={() => { if (confirm("Are you sure you want to remove " + driver.name + "?")) removeDriver(driver.id); }}>Remove</Btn>
           </div>
         </Card>
       </div>
@@ -846,20 +1009,18 @@ function ScheduleView({ event, drivers, activeEvent, setPrintMode }) {
   );
 }
 
-function HoursView({ event, drivers, setDrivers, activeEvent }) {
+function HoursView({ event, drivers, activeEvent, saveDriverEvent }) {
   const [editingDay, setEditingDay] = useState(event?.days?.[0]?.id || "");
   if (!event) return null;
   const dayDrivers = drivers.filter((d) => d.events?.[activeEvent]?.scheduled?.[editingDay]);
 
   function updateHours(driverId, field, value) {
-    setDrivers(prev => prev.map(d => {
-      if (d.id !== driverId) return d;
-      const updated = { ...d, events: { ...d.events } };
-      updated.events[activeEvent] = { ...updated.events[activeEvent] };
-      updated.events[activeEvent].hours = { ...updated.events[activeEvent].hours };
-      updated.events[activeEvent].hours[editingDay] = { ...updated.events[activeEvent].hours[editingDay], [field]: value };
-      return updated;
-    }));
+    const driver = drivers.find(d => d.id === driverId);
+    const currentHours = driver?.events?.[activeEvent]?.hours || {};
+    const dayHours = currentHours[editingDay] || {};
+    const newDayHours = { ...dayHours, [field]: value };
+    const newHours = { ...currentHours, [editingDay]: newDayHours };
+    saveDriverEvent(driverId, activeEvent, "hours", newHours);
   }
 
   return (
@@ -911,7 +1072,7 @@ function HoursView({ event, drivers, setDrivers, activeEvent }) {
   );
 }
 
-function SummaryView({ event, drivers, setDrivers, activeEvent, setPrintMode }) {
+function SummaryView({ event, drivers, activeEvent, setPrintMode, saveDriverEvent }) {
   if (!event) return null;
   const scheduled = drivers.filter((d) => { const s = d.events?.[activeEvent]?.scheduled; return s && Object.values(s).some(Boolean); });
   const grandTotal = scheduled.reduce((s, d) => s + calcDriverEventTotal(d, activeEvent, event).totalPay, 0);
@@ -953,10 +1114,10 @@ function SummaryView({ event, drivers, setDrivers, activeEvent, setPrintMode }) 
                   <td style={{ padding: "10px" }}>{formatCurrency(t.totalHours * rate)}</td>
                   <td style={{ padding: "10px" }}>{formatCurrency(t.totalFuel)}</td>
                   <td style={{ padding: "10px", fontWeight: 700, color: COLORS.forest }}>{formatCurrency(t.totalPay)}</td>
-                  <td style={{ padding: "6px" }}><input type="text" value={evtData?.checkNumber || ""} placeholder="—" onChange={(e) => setDrivers(prev => prev.map(x => x.id !== d.id ? x : { ...x, events: { ...x.events, [activeEvent]: { ...x.events[activeEvent], checkNumber: e.target.value } } }))} style={{ padding: "6px", border: `1px solid ${COLORS.border}`, borderRadius: 6, fontSize: 13, width: 70 }} /></td>
+                  <td style={{ padding: "6px" }}><input type="text" value={evtData?.checkNumber || ""} placeholder="—" onChange={(e) => saveDriverEvent(d.id, activeEvent, "checkNumber", e.target.value)} style={{ padding: "6px", border: `1px solid ${COLORS.border}`, borderRadius: 6, fontSize: 13, width: 70 }} /></td>
                   <td style={{ padding: "10px", fontSize: 12 }}>{d.checkPref === "pickup" ? "Pick" : "Mail"}</td>
                   <td style={{ padding: "10px" }}>
-                    <button onClick={() => setDrivers(prev => prev.map(x => x.id !== d.id ? x : { ...x, events: { ...x.events, [activeEvent]: { ...x.events[activeEvent], paid: !x.events[activeEvent].paid } } }))}
+                    <button onClick={() => saveDriverEvent(d.id, activeEvent, "paid", !evtData?.paid)}
                       style={{ padding: "4px 12px", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, background: evtData?.paid ? "#e8f5e9" : "#fff3e0", color: evtData?.paid ? COLORS.success : COLORS.warning }}>
                       {evtData?.paid ? "✓ Paid" : "Unpaid"}
                     </button>
@@ -982,10 +1143,7 @@ function SummaryView({ event, drivers, setDrivers, activeEvent, setPrintMode }) 
 function TemplatesView() {
   return (
     <div style={{ animation: "fadeIn 0.3s ease" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Templates & Files</h2>
-        <Btn icon="add">Upload Template</Btn>
-      </div>
+      <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Templates & Files</h2>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
         {SAMPLE_TEMPLATES.map((t) => (
           <Card key={t.id} padding={20}>
@@ -993,7 +1151,7 @@ function TemplatesView() {
               <div style={{ width: 44, height: 44, borderRadius: 10, background: t.type === "PDF" ? "#fdf0ef" : "#e8f4fd", display: "flex", alignItems: "center", justifyContent: "center", color: t.type === "PDF" ? COLORS.rose : "#2980b9", fontWeight: 700, fontSize: 11 }}>{t.type}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>{t.name}</div>
-                <div style={{ fontSize: 12, color: COLORS.textMuted, lineHeight: 1.4 }}>{t.description}</div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted }}>{t.description}</div>
               </div>
             </div>
           </Card>
@@ -1003,15 +1161,15 @@ function TemplatesView() {
   );
 }
 
-function SignupView({ event, events, setEvents, activeEvent, showToast, showSignupPreview, setShowSignupPreview }) {
+function SignupView({ event, events, saveEvent, activeEvent, showToast, showSignupPreview, setShowSignupPreview }) {
   const [editingIntro, setEditingIntro] = useState(false);
   const [introText, setIntroText] = useState(event?.signupIntro || "");
   const signupLink = `https://familyflorist.app/signup/${event?.holiday?.toLowerCase().replace(/[^a-z]/g, "-")}-${event?.year}`;
 
   useEffect(() => { setIntroText(event?.signupIntro || ""); }, [event?.id]);
 
-  function saveIntro() {
-    setEvents(prev => prev.map(e => e.id === activeEvent ? { ...e, signupIntro: introText } : e));
+  function handleSaveIntro() {
+    saveEvent(activeEvent, { signupIntro: introText });
     setEditingIntro(false);
     showToast("Signup intro updated!");
   }
@@ -1020,31 +1178,24 @@ function SignupView({ event, events, setEvents, activeEvent, showToast, showSign
     <div style={{ animation: "fadeIn 0.3s ease" }}>
       <h2 style={{ margin: "0 0 20px", fontSize: 22, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>Driver Signup Form</h2>
 
-      <Card title="Share Signup Link" style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: COLORS.cream, borderRadius: 8, border: `1px solid ${COLORS.border}` }}>
-          <code style={{ flex: 1, fontSize: 13, color: COLORS.forest, fontWeight: 500, wordBreak: "break-all" }}>{signupLink}</code>
-          <Btn small icon="copy" onClick={() => showToast("Link copied!")}>Copy</Btn>
-        </div>
-      </Card>
-
       <Card title="Signup Form Introduction" style={{ marginBottom: 20 }} action={<Btn small variant="ghost" icon="edit" onClick={() => setEditingIntro(!editingIntro)}>{editingIntro ? "Cancel" : "Edit"}</Btn>}>
         {editingIntro ? (
           <div>
             <textarea value={introText} onChange={(e) => setIntroText(e.target.value)}
               style={{ width: "100%", height: 100, padding: 12, border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, resize: "vertical", fontFamily: "inherit" }} />
-            <Btn small icon="check" onClick={saveIntro} style={{ marginTop: 8 }}>Save</Btn>
+            <Btn small icon="check" onClick={handleSaveIntro} style={{ marginTop: 8 }}>Save</Btn>
           </div>
         ) : (
           <p style={{ fontSize: 13, margin: 0, lineHeight: 1.6 }}>{event?.signupIntro}</p>
         )}
       </Card>
 
-      <Card title="Document Links on Form" style={{ marginBottom: 20 }}>
+      <Card title="Document Links" style={{ marginBottom: 20 }}>
         {[["Driver Information Packet", event?.infoPacketUrl], ["Liability Waiver", event?.liabilityWaiverUrl]].map(([label, url]) => (
           <div key={label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: url ? "#f0faf4" : "#fff8e1", borderRadius: 8, marginBottom: 8 }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 13 }}>{label}</div>
-              <div style={{ fontSize: 11, color: COLORS.textMuted }}>{url ? "Link set — appears on form" : "Not set — add in Event Settings"}</div>
+              <div style={{ fontSize: 11, color: COLORS.textMuted }}>{url ? "Link set" : "Not set — add in Event Settings"}</div>
             </div>
             <Badge color={url ? COLORS.success : COLORS.warning}>{url ? "Active" : "Not Set"}</Badge>
           </div>
@@ -1056,45 +1207,20 @@ function SignupView({ event, events, setEvents, activeEvent, showToast, showSign
       {showSignupPreview && (
         <Card padding={0} style={{ overflow: "hidden" }}>
           <div style={{ background: `linear-gradient(135deg, ${COLORS.forestDark}, ${COLORS.forest})`, padding: "32px 40px", textAlign: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 8 }}>
-              <Icon name="flower" size={28} />
-              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, color: "#fff" }}>Family Florist</span>
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontStyle: "italic" }}>"Never Underestimate the Power of a Flower"</div>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, color: "#fff" }}>Family Florist</span>
           </div>
           <div style={{ padding: "32px 40px", maxWidth: 640, margin: "0 auto" }}>
             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, textAlign: "center", marginBottom: 28 }}>{event?.holiday} Flower Delivery Sign-up</h3>
             <div style={{ background: COLORS.cream, borderRadius: 10, padding: 20, marginBottom: 24, fontSize: 13, lineHeight: 1.7 }}>
               {event?.signupIntro} Earn <strong>{formatCurrency(event?.ratePerHour || 15)}/hour</strong> plus gas reimbursement.
             </div>
-
-            {(event?.infoPacketUrl || event?.liabilityWaiverUrl) && (
-              <div style={{ background: "#f0f7ff", borderRadius: 10, padding: 16, marginBottom: 24, border: "1px solid #bde0fe" }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>📄 Important Documents</div>
-                {event?.infoPacketUrl && <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, fontSize: 13 }}><Icon name="link" size={14} /><a href="#" style={{ color: COLORS.forest, fontWeight: 500, textDecoration: "underline" }}>View Driver Information Packet</a></div>}
-                {event?.liabilityWaiverUrl && <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}><Icon name="link" size={14} /><a href="#" style={{ color: COLORS.forest, fontWeight: 500, textDecoration: "underline" }}>View Liability Waiver</a></div>}
-              </div>
-            )}
-
-            {[{ label: "Name of Driver", req: true }, { label: "E-Mail", req: true }, { label: "Cell Phone", req: true }, { label: "Alt Phone", req: false }].map((f) => (
+            {[{ label: "Name", req: true }, { label: "Email", req: true }, { label: "Phone", req: true }].map((f) => (
               <div key={f.label} style={{ marginBottom: 16 }}>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 600, marginBottom: 6 }}>{f.label} {f.req && <span style={{ color: COLORS.rose }}>*</span>}</label>
                 <input disabled style={{ width: "100%", padding: "10px 14px", border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 13, background: "#fafafa" }} />
               </div>
             ))}
-
-            {event?.days.map((day) => (
-              <div key={day.id} style={{ marginBottom: 16, padding: 16, background: "#f8f6f0", borderRadius: 8 }}>
-                <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 8, textTransform: "uppercase" }}>Availability: {day.label} <span style={{ color: COLORS.rose }}>*</span></label>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
-                  <label><input type="radio" disabled /> ALL DAY {day.startTime}–{day.endTime}</label>
-                  <label><input type="radio" disabled /> Partial day</label>
-                  <label><input type="radio" disabled /> Cannot work</label>
-                </div>
-              </div>
-            ))}
-
-            <button disabled style={{ width: "100%", padding: 14, background: COLORS.forest, color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 600, fontFamily: "'Playfair Display', serif", opacity: 0.7 }}>Submit Application</button>
+            <button disabled style={{ width: "100%", padding: 14, background: COLORS.forest, color: "#fff", border: "none", borderRadius: 8, fontSize: 15, fontWeight: 600, opacity: 0.7 }}>Submit Application</button>
           </div>
         </Card>
       )}
@@ -1115,7 +1241,6 @@ function PrintView({ mode, event, drivers, activeEvent, onClose }) {
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
       <div style={{ textAlign: "center", marginBottom: 30, borderBottom: `2px solid ${COLORS.forest}`, paddingBottom: 16 }}>
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 700, color: COLORS.forest }}>Family Florist</div>
-        <div style={{ fontSize: 11, color: COLORS.textMuted }}>1680 N College Ave, Ste 1A, Fayetteville, AR 72701 · 479-295-7247</div>
         <div style={{ fontSize: 16, fontWeight: 600, marginTop: 8 }}>{event.name}</div>
         <div style={{ fontSize: 12, color: COLORS.textMuted }}>Driver: {formatCurrency(event.ratePerHour)}/hr · Dispatcher: {formatCurrency(event.dispatcherRate || event.ratePerHour)}/hr</div>
       </div>
