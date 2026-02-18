@@ -185,7 +185,7 @@ function eventFromDb(e) {
 function driverToDb(d) {
   return {
     name: d.name, email: d.email || "", phone: d.phone || "", alt_phone: d.altPhone || "",
-    is_returning: d.returning || false, has_dl: d.hasDL || false, has_insurance: d.hasInsurance || false,
+    "returning": d.returning || false, has_dl: d.hasDL || false, has_insurance: d.hasInsurance || false,
     check_pref: d.checkPref || "pickup", mailing_address: d.mailingAddress || "",
     signed_liability: d.signedLiability || false, status: d.status || "active", role: d.role || "driver",
     notes: d.notes || "", rating: d.rating || 0,
@@ -205,7 +205,7 @@ function driverFromDb(d, driverEventsData) {
   });
   return {
     id: d.id, name: d.name, email: d.email, phone: d.phone, altPhone: d.alt_phone || "",
-    returning: d.is_returning, hasDL: d.has_dl, hasInsurance: d.has_insurance,
+    returning: d.returning, hasDL: d.has_dl, hasInsurance: d.has_insurance,
     checkPref: d.check_pref, mailingAddress: d.mailing_address || "",
     signedLiability: d.signed_liability, status: d.status, role: d.role, events,
     notes: d.notes || "", rating: d.rating || 0,
@@ -324,7 +324,7 @@ export default function FamilyFloristApp({ supabase, user }) {
     if (updates.email !== undefined) dbUpdates.email = updates.email;
     if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
     if (updates.altPhone !== undefined) dbUpdates.alt_phone = updates.altPhone;
-    if (updates.returning !== undefined) dbUpdates.is_returning = updates.returning;
+    if (updates.returning !== undefined) dbUpdates.returning = updates.returning;
     if (updates.hasDL !== undefined) dbUpdates.has_dl = updates.hasDL;
     if (updates.hasInsurance !== undefined) dbUpdates.has_insurance = updates.hasInsurance;
     if (updates.checkPref !== undefined) dbUpdates.check_pref = updates.checkPref;
